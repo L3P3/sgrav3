@@ -1,5 +1,7 @@
 html, body {
 	height: 100%;
+	user-select: none;
+	-moz-user-select: none;
 }
 body {
 	margin: 0;
@@ -12,6 +14,7 @@ body {
 #screen {
 	flex-grow: 1;
 	contain: strict;
+	cursor: crosshair;
 }
 #screen > div {
 	position: absolute;

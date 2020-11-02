@@ -80,7 +80,9 @@ const tool_create = new (
 		}
 
 		screen_down () {
-			new particle;
+			return () => {
+				new particle;
+			}
 		}
 	}
 );
@@ -91,7 +93,7 @@ const tool_delete = new (
 			super('Löschen');
 		}
 
-		screen_up () {
+		screen_down () {
 			alert('GELÖSCHT');
 		}
 	}
@@ -114,16 +116,17 @@ element_screen.addEventListener(
 	event => {
 		cursor_x = event.clientX;
 		cursor_y = event.clientY;
-		tool_active?.screen_down();
-	}
-);
 
-element_screen.addEventListener(
-	'mouseup',
-	event => {
-		cursor_x = event.clientX;
-		cursor_y = event.clientY;
-		tool_active?.screen_up();
+		const handler_up = tool_active?.screen_down();
+		if (handler_up) {
+			window.onmouseup = event => {
+				cursor_x = event.clientX;
+				cursor_y = event.clientY;
+				window.onmouseup = null;
+
+				handler_up();
+			}
+		}
 	}
 );
 
