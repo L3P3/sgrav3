@@ -5,6 +5,8 @@ const element_tools = $('#tools');
 
 let tool_active = null;
 
+const particles = new Set;
+
 let setting_size = 15;
 
 let cursor_x = 0;
@@ -16,8 +18,8 @@ class particle {
 	radius = 0;
 	position_x = 0;
 	position_y = 0;
-	speed_x = 0;
-	speed_y = 0;
+	speed_x = 0.01;
+	speed_y = 0.01;
 
 	constructor () {
 		this.radius = setting_size;
@@ -32,10 +34,27 @@ class particle {
 		element.style.height =
 			this.radius*2 + 'px';
 
-		element.style.transform = `translate(${this.position_x-this.radius}px, ${this.position_y-this.radius}px)`;
-
 		element_screen.appendChild(element);
+		particles.add(this);
 	}
+
+	tick (delay) {
+		this.position_x += this.speed_x * delay;
+		this.position_y += this.speed_y * delay;
+
+		this.element.style.transform = `translate(${this.position_x-this.radius}px, ${this.position_y-this.radius}px)`;
+	}
+}
+
+let tick_last = 0;
+
+function tick (now) {
+	const delay = now - tick_last;
+	tick_last = now;
+	for (const particle of particles) {
+		particle.tick(delay);
+	}
+	requestAnimationFrame(tick);
 }
 
 class tool {
@@ -138,3 +157,5 @@ element_screen.addEventListener(
 		tool_active?.screen_move();
 	}
 );
+
+tick(0);
