@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset=utf-8 />
+		<meta name=viewport content="width=device-width" />
+		<title>Physik</title>
+		<style>
+			html, body {
+				height: 100%;
+			}
+			body {
+				margin: 0;
+				background: black;
+				color: white;
+				display: flex;
+				flex-direction: column;
+			}
+			#screen {
+				flex-grow: 1;
+				contain: strict;
+			}
+			#tools {
+				background: gray;
+			}
+			#screen > div {
+				position: absolute;
+				background: red;
+				border-radius: 50%;
+				width: 50px;
+				height: 50px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id=screen>
+			<div></div>
+		</div>
+		<div id=tools>
+			<button>Test</button>
+		</div>
+	</body>
+</html>
