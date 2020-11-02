@@ -1,0 +1,22 @@
+html, body {
+	height: 100%;
+}
+body {
+	margin: 0;
+	background: black;
+	color: white;
+	display: flex;
+	flex-direction: column;
+}
+#screen {
+	flex-grow: 1;
+	contain: strict;
+}
+#tools {
+	background: gray;
+}
+#screen > div {
+	position: absolute;
+	background: red;
+	border-radius: 50%;
+}
