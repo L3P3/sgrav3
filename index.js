@@ -12,14 +12,18 @@ let setting_size = 15;
 let cursor_x = 0;
 let cursor_y = 0;
 
-class particle {
+
+// PHYSICS
+
+class Particle {
 	element = null;
 
 	radius = 0;
 	position_x = 0;
 	position_y = 0;
-	speed_x = 0.01;
-	speed_y = 0.01;
+	speed_x = 0;
+	speed_y = 0;
+	phantom = false;
 
 	constructor () {
 		this.radius = setting_size;
@@ -39,25 +43,19 @@ class particle {
 	}
 
 	tick (delay) {
-		this.position_x += this.speed_x * delay;
-		this.position_y += this.speed_y * delay;
+		if (!this.phantom) {
+			this.position_x += this.speed_x * delay;
+			this.position_y += this.speed_y * delay;
+		}
 
 		this.element.style.transform = `translate(${this.position_x-this.radius}px, ${this.position_y-this.radius}px)`;
 	}
 }
 
-let tick_last = 0;
 
-function tick (now) {
-	const delay = now - tick_last;
-	tick_last = now;
-	for (const particle of particles) {
-		particle.tick(delay);
-	}
-	requestAnimationFrame(tick);
-}
+// TOOLS
 
-class tool {
+class Tool {
 	element = null;
 
 	constructor (label) {
@@ -93,21 +91,28 @@ class tool {
 }
 
 const tool_create = new (
-	class extends tool {
+	class extends Tool {
 		constructor () {
 			super('Erstellen');
 		}
 
 		screen_down () {
+			const particle = new Particle;
+			const down_x = cursor_x;
+			const down_y = cursor_y;
+			particle.phantom = true;
+
 			return () => {
-				new particle;
+				particle.speed_x = (cursor_x - down_x) * 0.001;
+				particle.speed_y = (cursor_y - down_y) * 0.001;
+				particle.phantom = false;
 			}
 		}
 	}
 );
 
 const tool_delete = new (
-	class extends tool {
+	class extends Tool {
 		constructor () {
 			super('Löschen');
 		}
@@ -119,7 +124,7 @@ const tool_delete = new (
 );
 
 new (
-	class extends tool {
+	class extends Tool {
 		constructor () {
 			super('Info');
 		}
@@ -129,6 +134,11 @@ new (
 		}
 	}
 );
+
+tool_create.button_action();
+
+
+// LISTENERS
 
 element_screen.addEventListener(
 	'mousedown',
@@ -157,5 +167,19 @@ element_screen.addEventListener(
 		tool_active?.screen_move();
 	}
 );
+
+
+// LOOP
+
+let tick_last = 0;
+
+function tick (now) {
+	const delay = now - tick_last;
+	tick_last = now;
+	for (const particle of particles) {
+		particle.tick(delay);
+	}
+	requestAnimationFrame(tick);
+}
 
 tick(0);
