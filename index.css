@@ -8,15 +8,24 @@ body {
 	display: flex;
 	flex-direction: column;
 }
+
 #screen {
 	flex-grow: 1;
 	contain: strict;
-}
-#tools {
-	background: gray;
 }
 #screen > div {
 	position: absolute;
 	background: red;
 	border-radius: 50%;
+}
+
+#tools {
+	background: gray;
+}
+#tools > button {
+	cursor: pointer;
+}
+#tools > button.active {
+	background: green;
+	color: white;
 }
