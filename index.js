@@ -12,6 +12,20 @@ let setting_size = 15;
 let cursor_x = 0;
 let cursor_y = 0;
 
+const border_x1 = 0;
+const border_x2 = element_screen.offsetWidth;
+const border_y1 = 0;
+const border_y2 = element_screen.offsetHeight - 50;
+
+
+// BORDER
+
+const border_element = document.createElement('div');
+border_element.className = 'box';
+border_element.style.width = (border_x2 - border_x1) + 'px';
+border_element.style.height = (border_y2 - border_y1) + 'px';
+element_screen.appendChild(border_element);
+
 
 // PHYSICS
 
@@ -46,6 +60,24 @@ class Particle {
 		if (!this.phantom) {
 			this.position_x += this.speed_x * delay;
 			this.position_y += this.speed_y * delay;
+		}
+
+		if (this.position_x - this.radius < border_x1) {
+			this.position_x = border_x1 + this.radius;
+			this.speed_x *= -1;
+		}
+		else if (this.position_x + this.radius > border_x2) {
+			this.position_x = border_x2 - this.radius;
+			this.speed_x *= -1;
+		}
+
+		if (this.position_y - this.radius < border_y1) {
+			this.position_y = border_y1 + this.radius;
+			this.speed_y *= -1;
+		}
+		else if (this.position_y + this.radius > border_y2) {
+			this.position_y = border_y2 - this.radius;
+			this.speed_y *= -1;
 		}
 
 		this.element.style.transform = `translate(${this.position_x-this.radius}px, ${this.position_y-this.radius}px)`;

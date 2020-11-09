@@ -22,6 +22,11 @@ body {
 	border-radius: 50%;
 }
 
+#screen > .box {
+	border-radius: 0;
+	background: #111;
+}
+
 #tools {
 	background: gray;
 }
