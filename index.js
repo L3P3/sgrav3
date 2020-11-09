@@ -5,7 +5,7 @@ const element_tools = $('#tools');
 
 let tool_active = null;
 
-let setting_size = 100;
+let setting_size = 50;
 
 let cursor_x = 0;
 let cursor_y = 0;
@@ -14,8 +14,12 @@ const border_x1 = 0;
 const border_x2 = element_screen.offsetWidth;
 const border_y1 = 0;
 const border_y2 = element_screen.offsetHeight - 50;
+const border_factor = .7;
 
-let pause = false;
+let pause_enabled = false;
+let border_enabled = false;
+let gravity_enabled = false;
+let charge_enabled = false;
 
 
 // BORDER
@@ -33,6 +37,15 @@ class Particle {
 	static all = new Set;
 
 	static tick (delay) {
+		if (
+			!pause_enabled &&
+			(gravity_enabled || charge_enabled)
+		) {
+			for (const particle of Particle.all) {
+				particle.tick_speed(delay);
+			}
+		}
+
 		for (const particle of Particle.all) {
 			particle.tick(delay);
 		}
@@ -66,12 +79,14 @@ class Particle {
 	position_y = 0;
 	speed_x = 0;
 	speed_y = 0;
+	density = .01;
+	charge = 1;
 	phantom = false;
 
 	constructor () {
 		this.radius = setting_size;
-		this.position_x = cursor_x;
-		this.position_y = cursor_y;
+		this.position_x = cursor_x + Math.random() * .0001;
+		this.position_y = cursor_y + Math.random() * .0001;
 
 		const element =
 		this.element =
@@ -90,29 +105,67 @@ class Particle {
 		Particle.all.delete(this);
 	}
 
+	get area () {
+		return this.radius * this.radius * Math.PI;
+	}
+
+	get mass () {
+		return this.density * this.area;
+	}
+
+	distance_to (particle) {
+		return Math.sqrt(
+			Math.pow(particle.position_x - this.position_x, 2) +
+			Math.pow(particle.position_y - this.position_y, 2)
+		);
+	}
+
+	tick_speed (delay) {
+		if (this.phantom) return;
+
+		for (const particle of Particle.all) {
+			if (
+				particle.phantom ||
+				particle.position_x === this.position_x &&
+				particle.position_y === this.position_y
+			) continue;
+
+			const impact = particle.mass / this.mass;
+			const force_gravity = gravity_enabled ? impact : 0;
+			const force_charge = charge_enabled ? -this.charge * particle.charge * impact : 0;
+
+			const distance = this.distance_to(particle);
+			this.speed_x += (force_gravity + force_charge) * (particle.position_x - this.position_x) / Math.pow(distance, 2) / delay;
+			this.speed_y += (force_gravity + force_charge) * (particle.position_y - this.position_y) / Math.pow(distance, 2) / delay;
+		}
+	}
+
 	tick (delay) {
-		if (!pause) {
-			if (!this.phantom) {
-				this.position_x += this.speed_x * delay;
-				this.position_y += this.speed_y * delay;
-			}
+		if (
+			!pause_enabled &&
+			!this.phantom
+		) {
+			this.position_x += this.speed_x * delay;
+			this.position_y += this.speed_y * delay;
 
-			if (this.position_x - this.radius < border_x1) {
-				this.position_x = border_x1 + this.radius;
-				this.speed_x *= -1;
-			}
-			else if (this.position_x + this.radius > border_x2) {
-				this.position_x = border_x2 - this.radius;
-				this.speed_x *= -1;
-			}
+			if (border_enabled) {
+				if (this.position_x - this.radius < border_x1) {
+					this.position_x = border_x1 + this.radius;
+					this.speed_x *= -border_factor;
+				}
+				else if (this.position_x + this.radius > border_x2) {
+					this.position_x = border_x2 - this.radius;
+					this.speed_x *= -border_factor;
+				}
 
-			if (this.position_y - this.radius < border_y1) {
-				this.position_y = border_y1 + this.radius;
-				this.speed_y *= -1;
-			}
-			else if (this.position_y + this.radius > border_y2) {
-				this.position_y = border_y2 - this.radius;
-				this.speed_y *= -1;
+				if (this.position_y - this.radius < border_y1) {
+					this.position_y = border_y1 + this.radius;
+					this.speed_y *= -border_factor;
+				}
+				else if (this.position_y + this.radius > border_y2) {
+					this.position_y = border_y2 - this.radius;
+					this.speed_y *= -border_factor;
+				}
 			}
 		}
 
@@ -200,9 +253,62 @@ new (
 		}
 
 		button_action () {
-			pause = !pause;
+			pause_enabled = !pause_enabled;
 			this.element.className = (
-				pause
+				pause_enabled
+				?	'active'
+				:	''
+			);
+		}
+	}
+);
+
+new (
+	class extends Tool {
+		constructor () {
+			super('Rahmen');
+			this.button_action();
+		}
+
+		button_action () {
+			border_enabled = !border_enabled;
+			this.element.className = (
+				border_enabled
+				?	'active'
+				:	''
+			);
+		}
+	}
+);
+
+new (
+	class extends Tool {
+		constructor () {
+			super('Gravitation');
+			this.button_action();
+		}
+
+		button_action () {
+			gravity_enabled = !gravity_enabled;
+			this.element.className = (
+				gravity_enabled
+				?	'active'
+				:	''
+			);
+		}
+	}
+);
+
+new (
+	class extends Tool {
+		constructor () {
+			super('Ladung');
+		}
+
+		button_action () {
+			charge_enabled = !charge_enabled;
+			this.element.className = (
+				charge_enabled
 				?	'active'
 				:	''
 			);
