@@ -20,6 +20,7 @@ let pause_enabled = false;
 let border_enabled = false;
 let gravity_enabled = false;
 let charge_enabled = false;
+let merge_enabled = false;
 
 
 // BORDER
@@ -92,9 +93,7 @@ class Particle {
 		this.element =
 			document.createElement('div');
 
-		element.style.width =
-		element.style.height =
-			this.radius*2 + 'px';
+		this.size_update();
 
 		element_screen.appendChild(element);
 		Particle.all.add(this);
@@ -108,9 +107,26 @@ class Particle {
 	get area () {
 		return this.radius * this.radius * Math.PI;
 	}
+	set area (value) {
+		this.radius = Math.sqrt(value / Math.PI);
+	}
 
 	get mass () {
 		return this.density * this.area;
+	}
+
+	get energy_x () {
+		return this.speed_x * this.mass;
+	}
+	set energy_x (value) {
+		this.speed_x = value / this.mass;
+	}
+
+	get energy_y () {
+		return this.speed_y * this.mass;
+	}
+	set energy_y (value) {
+		this.speed_y = value / this.mass;
 	}
 
 	distance_to (particle) {
@@ -120,12 +136,19 @@ class Particle {
 		);
 	}
 
+	size_update () {
+		this.element.style.width =
+		this.element.style.height =
+			this.radius*2 + 'px';
+	}
+
 	tick_speed (delay) {
 		if (this.phantom) return;
 
 		for (const particle of Particle.all) {
 			if (
 				particle.phantom ||
+				particle === this ||
 				particle.position_x === this.position_x &&
 				particle.position_y === this.position_y
 			) continue;
@@ -147,6 +170,31 @@ class Particle {
 		) {
 			this.position_x += this.speed_x * delay;
 			this.position_y += this.speed_y * delay;
+
+			if (merge_enabled) {
+				for (const particle of Particle.all) {
+					if (
+						particle === this ||
+						this.distance_to(particle) > this.radius + particle.radius
+					) continue;
+
+					const mass_ratio_a = this.mass / particle.mass + 1;
+					const mass_ratio_b = particle.mass / this.mass + 1;
+
+					this.speed_x = this.speed_x / mass_ratio_b + particle.speed_x / mass_ratio_a;
+					this.speed_y = this.speed_y / mass_ratio_b + particle.speed_y / mass_ratio_a;
+
+					this.position_x = this.position_x / mass_ratio_b + particle.position_x / mass_ratio_a;
+					this.position_y = this.position_y / mass_ratio_b + particle.position_y / mass_ratio_a;
+
+					this.density = (this.mass + particle.mass) / (this.area + particle.area);
+					this.area = this.area + particle.area;
+					this.charge = this.charge / mass_ratio_b + particle.charge / mass_ratio_a;
+
+					particle.destroy();
+					this.size_update();
+				}
+			}
 
 			if (border_enabled) {
 				if (this.position_x - this.radius < border_x1) {
@@ -309,6 +357,24 @@ new (
 			charge_enabled = !charge_enabled;
 			this.element.className = (
 				charge_enabled
+				?	'active'
+				:	''
+			);
+		}
+	}
+);
+
+new (
+	class extends Tool {
+		constructor () {
+			super('Verschmelzen');
+			this.button_action();
+		}
+
+		button_action () {
+			merge_enabled = !merge_enabled;
+			this.element.className = (
+				merge_enabled
 				?	'active'
 				:	''
 			);
