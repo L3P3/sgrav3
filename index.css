@@ -18,7 +18,6 @@ body {
 }
 #screen > div {
 	position: absolute;
-	background: red;
 	border-radius: 50%;
 }
 
@@ -27,8 +26,14 @@ body {
 	background: #111;
 }
 
-#tools {
+#tools > *, #toolsettings > * {
+	height: 30px;
+}
+
+#tools, #toolsettings {
 	background: gray;
+	height: 30px;
+	overflow-y: hidden;
 }
 #tools > button {
 	cursor: pointer;

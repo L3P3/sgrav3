@@ -2,6 +2,7 @@ const $ = document.querySelector.bind(document);
 
 const element_screen = $('#screen');
 const element_tools = $('#tools');
+const element_toolsettings = $('#toolsettings');
 
 let tool_active = null;
 
@@ -13,7 +14,7 @@ let cursor_y = 0;
 const border_x1 = 0;
 const border_x2 = element_screen.offsetWidth;
 const border_y1 = 0;
-const border_y2 = element_screen.offsetHeight - 50;
+const border_y2 = element_screen.offsetHeight;
 const border_factor = .7;
 
 let pause_enabled = false;
@@ -83,6 +84,7 @@ class Particle {
 	density = .01;
 	charge = 1;
 	phantom = false;
+	_color = '#ff0000';
 
 	constructor () {
 		this.radius = setting_size;
@@ -127,6 +129,37 @@ class Particle {
 	}
 	set energy_y (value) {
 		this.speed_y = value / this.mass;
+	}
+
+	set color(value) {
+		this.element.style.background =
+		this._color = value;
+	}
+	get color() {
+		return this._color;
+	}
+
+	set color_numbers(value) {
+		this.color = '#' + (
+			value
+			.map(com =>
+				com
+				.toString(16)
+				.padStart(2, '0')
+			)
+			.join('')
+		);
+	}
+	get color_numbers() {
+		const number = parseInt(
+			this.color.substr(1),
+			16
+		);
+		return [
+			number >> 16,
+			(number >> 8) & 255,
+			number & 255
+		];
 	}
 
 	distance_to (particle) {
@@ -191,6 +224,15 @@ class Particle {
 					this.area = this.area + particle.area;
 					this.charge = this.charge / mass_ratio_b + particle.charge / mass_ratio_a;
 
+					this.color_numbers = (
+						this.color_numbers
+						.map((item, index) =>
+							Math.round(
+								item / mass_ratio_b + particle.color_numbers[index] / mass_ratio_a
+							)
+						)
+					);
+
 					particle.destroy();
 					this.size_update();
 				}
@@ -226,6 +268,7 @@ class Particle {
 
 class Tool {
 	element = null;
+	settings = [];
 
 	constructor (label) {
 		const element =
@@ -246,12 +289,20 @@ class Tool {
 
 	unselect () {
 		this.element.className = '';
+
+		for (const setting of this.settings) {
+			element_toolsettings.removeChild(setting);
+		}
 	}
 
 	button_action () {
 		tool_active?.unselect();
 		this.element.className = 'active';
 		tool_active = this;
+
+		for (const setting of this.settings) {
+			element_toolsettings.appendChild(setting);
+		}
 	}
 
 	screen_down () {}
@@ -263,6 +314,11 @@ const tool_create = new (
 	class extends Tool {
 		constructor () {
 			super('Erstellen');
+
+			const element_color = document.createElement('input');
+			element_color.type = 'color';
+			element_color.value = '#ff0000';
+			this.settings.push(element_color);
 		}
 
 		screen_down () {
@@ -270,6 +326,7 @@ const tool_create = new (
 			const down_x = cursor_x;
 			const down_y = cursor_y;
 			particle.phantom = true;
+			particle.color = this.settings[0].value;
 
 			return () => {
 				particle.speed_x = (cursor_x - down_x) * 0.001;
