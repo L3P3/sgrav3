@@ -1,35 +1,55 @@
-const $ = document.querySelector.bind(document);
+/**
+ * sgrav3 -- simple physics playground
+ * @author L3P3
+ * @author Throneck
+*/
 
-const element_screen = $('#screen');
-const element_tools = $('#tools');
-const element_toolsettings = $('#toolsettings');
+class Application {
+	static instance = null;
 
-let cursor_x = 0;
-let cursor_y = 0;
+	static getInstance() {
+		if (Application.instance === null) {
+			Application.instance = new Application;
+		}
+		return Application.instance;
+	}
 
-const border_x1 = 0;
-const border_x2 = element_screen.offsetWidth;
-const border_y1 = 0;
-const border_y2 = element_screen.offsetHeight;
-const border_factor = .7;
+	element_screen = null;
+	element_tools = null;
+	element_toolsettings = null;
 
-let pause_enabled = false;
-let border_enabled = false;
-let gravity_enabled = false;
-let charge_enabled = false;
-let merge_enabled = false;
+	cursor_x = 0;
+	cursor_y = 0;
 
+	border_x1 = 0;
+	border_x2 = 0;
+	border_y1 = 0;
+	border_y2 = 0;
+	border_factor = .7;
 
-// BORDER
+	pause_enabled = false;
+	border_enabled = false;
+	gravity_enabled = false;
+	charge_enabled = false;
+	merge_enabled = false;
 
-const border_element = document.createElement('div');
-border_element.className = 'box';
-border_element.style.width = (border_x2 - border_x1) + 'px';
-border_element.style.height = (border_y2 - border_y1) + 'px';
-element_screen.appendChild(border_element);
+	constructor() {
+		const $ = document.querySelector.bind(document);
 
+		this.element_screen = $('#screen');
+		this.element_tools = $('#tools');
+		this.element_toolsettings = $('#toolsettings');
 
-// PHYSICS
+		this.border_x2 = this.element_screen.offsetWidth;
+		this.border_y2 = this.element_screen.offsetHeight;
+
+		const border_element = document.createElement('div');
+		border_element.className = 'box';
+		border_element.style.width = (this.border_x2 - this.border_x1) + 'px';
+		border_element.style.height = (this.border_y2 - this.border_y1) + 'px';
+		this.element_screen.appendChild(border_element);
+	}
+}
 
 class Particle {
 	static all = new Set;
@@ -50,9 +70,11 @@ class Particle {
 	}
 
 	static tick (delay) {
+		const app = Application.getInstance();
+
 		if (
-			!pause_enabled &&
-			(gravity_enabled || charge_enabled)
+			!app.pause_enabled &&
+			(app.gravity_enabled || app.charge_enabled)
 		) {
 			for (const particle of Particle.all) {
 				particle.tick_speed(delay);
@@ -71,12 +93,14 @@ class Particle {
 	}
 
 	static hovered_get () {
+		const app = Application.getInstance();
+
 		const matches = [];
 		for (const particle of Particle.all) {
 			if (
 				Math.sqrt(
-					Math.pow(particle.position_x - cursor_x, 2) +
-					Math.pow(particle.position_y - cursor_y, 2)
+					Math.pow(particle.position_x - app.cursor_x, 2) +
+					Math.pow(particle.position_y - app.cursor_y, 2)
 				) <= particle.radius
 			) {
 				matches.push(particle);
@@ -98,19 +122,21 @@ class Particle {
 	_radius = 0;
 
 	constructor () {
-		this.position_x = cursor_x + Math.random() * .0001;
-		this.position_y = cursor_y + Math.random() * .0001;
+		const app = Application.getInstance();
+
+		this.position_x = app.cursor_x + Math.random() * .0001;
+		this.position_y = app.cursor_y + Math.random() * .0001;
 
 		const element =
 		this.element =
 			document.createElement('div');
 
-		element_screen.appendChild(element);
+		app.element_screen.appendChild(element);
 		Particle.all.add(this);
 	}
 
 	destroy () {
-		element_screen.removeChild(this.element);
+		Application.getInstance().element_screen.removeChild(this.element);
 		Particle.all.delete(this);
 	}
 
@@ -176,6 +202,7 @@ class Particle {
 
 	tick_speed (delay) {
 		if (this.phantom) return;
+		const app = Application.getInstance();
 
 		for (const particle of Particle.all) {
 			if (
@@ -186,8 +213,8 @@ class Particle {
 			) continue;
 
 			const impact = particle.mass / this.mass;
-			const force_gravity = gravity_enabled ? impact : 0;
-			const force_charge = charge_enabled ? -this.charge * particle.charge * impact : 0;
+			const force_gravity = app.gravity_enabled ? impact : 0;
+			const force_charge = app.charge_enabled ? -this.charge * particle.charge * impact : 0;
 
 			const distance = this.distance_to(particle);
 			this.speed_x += (force_gravity + force_charge) * (particle.position_x - this.position_x) / Math.pow(distance, 2) / delay;
@@ -196,14 +223,16 @@ class Particle {
 	}
 
 	tick (delay) {
+		const app = Application.getInstance();
+
 		if (
-			!pause_enabled &&
+			!app.pause_enabled &&
 			!this.phantom
 		) {
 			this.position_x += this.speed_x * delay;
 			this.position_y += this.speed_y * delay;
 
-			if (merge_enabled) {
+			if (app.merge_enabled) {
 				for (const particle of Particle.all) {
 					if (
 						particle === this ||
@@ -236,23 +265,23 @@ class Particle {
 				}
 			}
 
-			if (border_enabled) {
-				if (this.position_x - this.radius < border_x1) {
-					this.position_x = border_x1 + this.radius;
-					this.speed_x *= -border_factor;
+			if (app.border_enabled) {
+				if (this.position_x - this.radius < app.border_x1) {
+					this.position_x = app.border_x1 + this.radius;
+					this.speed_x *= -app.border_factor;
 				}
-				else if (this.position_x + this.radius > border_x2) {
-					this.position_x = border_x2 - this.radius;
-					this.speed_x *= -border_factor;
+				else if (this.position_x + this.radius > app.border_x2) {
+					this.position_x = app.border_x2 - this.radius;
+					this.speed_x *= -app.border_factor;
 				}
 
-				if (this.position_y - this.radius < border_y1) {
-					this.position_y = border_y1 + this.radius;
-					this.speed_y *= -border_factor;
+				if (this.position_y - this.radius < app.border_y1) {
+					this.position_y = app.border_y1 + this.radius;
+					this.speed_y *= -app.border_factor;
 				}
-				else if (this.position_y + this.radius > border_y2) {
-					this.position_y = border_y2 - this.radius;
-					this.speed_y *= -border_factor;
+				else if (this.position_y + this.radius > app.border_y2) {
+					this.position_y = app.border_y2 - this.radius;
+					this.speed_y *= -app.border_factor;
 				}
 			}
 		}
@@ -261,24 +290,23 @@ class Particle {
 	}
 }
 
-
-// TOOLS
-
 class Tool {
 	static active = null;
 
 	static init() {
-		element_screen.addEventListener(
+		const app = Application.getInstance();
+
+		app.element_screen.addEventListener(
 			'mousedown',
 			event => {
-				cursor_x = event.clientX;
-				cursor_y = event.clientY;
+				app.cursor_x = event.clientX;
+				app.cursor_y = event.clientY;
 
 				const handler_up = Tool.active?.screen_down();
 				if (handler_up) {
 					window.onmouseup = event => {
-						cursor_x = event.clientX;
-						cursor_y = event.clientY;
+						app.cursor_x = event.clientX;
+						app.cursor_y = event.clientY;
 						window.onmouseup = null;
 
 						handler_up();
@@ -287,11 +315,11 @@ class Tool {
 			}
 		);
 
-		element_screen.addEventListener(
+		app.element_screen.addEventListener(
 			'mousemove',
 			event => {
-				cursor_x = event.clientX;
-				cursor_y = event.clientY;
+				app.cursor_x = event.clientX;
+				app.cursor_y = event.clientY;
 				Tool.active?.screen_move();
 			}
 		);
@@ -316,24 +344,26 @@ class Tool {
 			}
 		);
 
-		element_tools.appendChild(element);
+		Application.getInstance().element_tools.appendChild(element);
 	}
 
 	unselect () {
+		const app = Application.getInstance();
 		this.element.className = '';
 
 		for (const setting of this.settings) {
-			element_toolsettings.removeChild(setting);
+			app.element_toolsettings.removeChild(setting);
 		}
 	}
 
 	button_action () {
+		const app = Application.getInstance();
 		Tool.active?.unselect();
 		this.element.className = 'active';
 		Tool.active = this;
 
 		for (const setting of this.settings) {
-			element_toolsettings.appendChild(setting);
+			app.element_toolsettings.appendChild(setting);
 		}
 	}
 
@@ -358,16 +388,18 @@ const tool_create = new (
 		}
 
 		screen_down () {
+			const app = Application.getInstance();
+
 			const particle = new Particle;
-			const down_x = cursor_x;
-			const down_y = cursor_y;
+			const down_x = app.cursor_x;
+			const down_y = app.cursor_y;
 			particle.phantom = true;
 			particle.color = this.settings[0].value;
 			particle.radius = Number(this.settings[1].value);
 
 			return () => {
-				particle.speed_x = (cursor_x - down_x) * 0.001;
-				particle.speed_y = (cursor_y - down_y) * 0.001;
+				particle.speed_x = (app.cursor_x - down_x) * 0.001;
+				particle.speed_y = (app.cursor_y - down_y) * 0.001;
 				particle.phantom = false;
 			}
 		}
@@ -395,9 +427,11 @@ new (
 		}
 
 		button_action () {
-			pause_enabled = !pause_enabled;
+			const app = Application.getInstance();
+
+			app.pause_enabled = !app.pause_enabled;
 			this.element.className = (
-				pause_enabled
+				app.pause_enabled
 				?	'active'
 				:	''
 			);
@@ -413,9 +447,11 @@ new (
 		}
 
 		button_action () {
-			border_enabled = !border_enabled;
+			const app = Application.getInstance();
+
+			app.border_enabled = !app.border_enabled;
 			this.element.className = (
-				border_enabled
+				app.border_enabled
 				?	'active'
 				:	''
 			);
@@ -431,9 +467,11 @@ new (
 		}
 
 		button_action () {
-			gravity_enabled = !gravity_enabled;
+			const app = Application.getInstance();
+
+			app.gravity_enabled = !app.gravity_enabled;
 			this.element.className = (
-				gravity_enabled
+				app.gravity_enabled
 				?	'active'
 				:	''
 			);
@@ -448,9 +486,11 @@ new (
 		}
 
 		button_action () {
-			charge_enabled = !charge_enabled;
+			const app = Application.getInstance();
+
+			app.charge_enabled = !app.charge_enabled;
 			this.element.className = (
-				charge_enabled
+				app.charge_enabled
 				?	'active'
 				:	''
 			);
@@ -466,9 +506,11 @@ new (
 		}
 
 		button_action () {
-			merge_enabled = !merge_enabled;
+			const app = Application.getInstance();
+
+			app.merge_enabled = !app.merge_enabled;
 			this.element.className = (
-				merge_enabled
+				app.merge_enabled
 				?	'active'
 				:	''
 			);
