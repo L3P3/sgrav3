@@ -409,6 +409,8 @@ const tool_create = new (
 			element_size.title = 'Größe';
 			element_size.type = 'range';
 			element_size.value = '50';
+			element_size.min = '1';
+			element_size.max = '100';
 			this.settings.push(element_size);
 
 			const element_charge = document.createElement('input');
