@@ -6,8 +6,6 @@ const element_toolsettings = $('#toolsettings');
 
 let tool_active = null;
 
-let setting_size = 50;
-
 let cursor_x = 0;
 let cursor_y = 0;
 
@@ -76,7 +74,6 @@ class Particle {
 
 	element = null;
 
-	radius = 0;
 	position_x = 0;
 	position_y = 0;
 	speed_x = 0;
@@ -85,17 +82,15 @@ class Particle {
 	charge = 1;
 	phantom = false;
 	_color = '#ff0000';
+	_radius = 0;
 
 	constructor () {
-		this.radius = setting_size;
 		this.position_x = cursor_x + Math.random() * .0001;
 		this.position_y = cursor_y + Math.random() * .0001;
 
 		const element =
 		this.element =
 			document.createElement('div');
-
-		this.size_update();
 
 		element_screen.appendChild(element);
 		Particle.all.add(this);
@@ -139,6 +134,17 @@ class Particle {
 		return this._color;
 	}
 
+	set radius(value) {
+		this._radius = value;
+
+		this.element.style.width =
+		this.element.style.height =
+			value*2 + 'px';
+	}
+	get radius() {
+		return this._radius;
+	}
+
 	set color_numbers(value) {
 		this.color = '#' + (
 			value
@@ -167,12 +173,6 @@ class Particle {
 			Math.pow(particle.position_x - this.position_x, 2) +
 			Math.pow(particle.position_y - this.position_y, 2)
 		);
-	}
-
-	size_update () {
-		this.element.style.width =
-		this.element.style.height =
-			this.radius*2 + 'px';
 	}
 
 	tick_speed (delay) {
@@ -234,7 +234,6 @@ class Particle {
 					);
 
 					particle.destroy();
-					this.size_update();
 				}
 			}
 
@@ -319,6 +318,11 @@ const tool_create = new (
 			element_color.type = 'color';
 			element_color.value = '#ff0000';
 			this.settings.push(element_color);
+
+			const element_size = document.createElement('input');
+			element_size.type = 'range';
+			element_size.value = '50';
+			this.settings.push(element_size);
 		}
 
 		screen_down () {
@@ -327,6 +331,7 @@ const tool_create = new (
 			const down_y = cursor_y;
 			particle.phantom = true;
 			particle.color = this.settings[0].value;
+			particle.radius = Number(this.settings[1].value);
 
 			return () => {
 				particle.speed_x = (cursor_x - down_x) * 0.001;
