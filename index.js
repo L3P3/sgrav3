@@ -302,7 +302,7 @@ class Tool {
 				app.cursor_x = event.clientX;
 				app.cursor_y = event.clientY;
 
-				const handler_up = Tool.active?.screen_down();
+				const handler_up = Tool.active.screen_down();
 				if (handler_up) {
 					window.onmouseup = event => {
 						app.cursor_x = event.clientX;
@@ -320,17 +320,21 @@ class Tool {
 			event => {
 				app.cursor_x = event.clientX;
 				app.cursor_y = event.clientY;
-				Tool.active?.screen_move();
+				Tool.active.screen_move();
 			}
 		);
 
-		tool_create.button_action();
+		Tool.active = tool_null;
 	}
 
 	element = null;
 	settings = [];
 
 	constructor (label) {
+		if (label === null) {
+			return;
+		}
+
 		const element =
 		this.element =
 			document.createElement('button');
@@ -357,19 +361,34 @@ class Tool {
 	}
 
 	button_action () {
-		const app = Application.getInstance();
-		Tool.active?.unselect();
-		this.element.className = 'active';
-		Tool.active = this;
-
-		for (const setting of this.settings) {
-			app.element_toolsettings.appendChild(setting);
+		Tool.active.unselect();
+		if (Tool.active === this) {
+			Tool.active = tool_null;
 		}
+		else {
+			const app = Application.getInstance();
+			this.element.className = 'active';
+			Tool.active = this;
+
+			for (const setting of this.settings) {
+				app.element_toolsettings.appendChild(setting);
+			}
+		}
+
 	}
 
 	screen_down () {}
 	screen_move () {}
 }
+
+const tool_null = new (
+	class extends Tool {
+		constructor () {
+			super(null);
+		}
+		unselect() {}
+	}
+);
 
 const tool_create = new (
 	class extends Tool {
@@ -406,7 +425,7 @@ const tool_create = new (
 	}
 );
 
-const tool_delete = new (
+new (
 	class extends Tool {
 		constructor () {
 			super('Löschen');
