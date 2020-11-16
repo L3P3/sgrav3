@@ -4,8 +4,6 @@ const element_screen = $('#screen');
 const element_tools = $('#tools');
 const element_toolsettings = $('#toolsettings');
 
-let tool_active = null;
-
 let cursor_x = 0;
 let cursor_y = 0;
 
@@ -35,6 +33,21 @@ element_screen.appendChild(border_element);
 
 class Particle {
 	static all = new Set;
+
+	static init() {
+		let tick_last = 0;
+
+		function tick (now) {
+			const delay = now - tick_last;
+			tick_last = now;
+
+			Particle.tick(delay);
+
+			requestAnimationFrame(tick);
+		}
+
+		tick(0);
+	}
 
 	static tick (delay) {
 		if (
@@ -112,37 +125,12 @@ class Particle {
 		return this.density * this.area;
 	}
 
-	get energy_x () {
-		return this.speed_x * this.mass;
-	}
-	set energy_x (value) {
-		this.speed_x = value / this.mass;
-	}
-
-	get energy_y () {
-		return this.speed_y * this.mass;
-	}
-	set energy_y (value) {
-		this.speed_y = value / this.mass;
-	}
-
 	set color(value) {
 		this.element.style.background =
 		this._color = value;
 	}
 	get color() {
 		return this._color;
-	}
-
-	set radius(value) {
-		this._radius = value;
-
-		this.element.style.width =
-		this.element.style.height =
-			value*2 + 'px';
-	}
-	get radius() {
-		return this._radius;
 	}
 
 	set color_numbers(value) {
@@ -166,6 +154,17 @@ class Particle {
 			(number >> 8) & 255,
 			number & 255
 		];
+	}
+
+	set radius(value) {
+		this._radius = value;
+
+		this.element.style.width =
+		this.element.style.height =
+			value*2 + 'px';
+	}
+	get radius() {
+		return this._radius;
 	}
 
 	distance_to (particle) {
@@ -266,6 +265,40 @@ class Particle {
 // TOOLS
 
 class Tool {
+	static active = null;
+
+	static init() {
+		element_screen.addEventListener(
+			'mousedown',
+			event => {
+				cursor_x = event.clientX;
+				cursor_y = event.clientY;
+
+				const handler_up = Tool.active?.screen_down();
+				if (handler_up) {
+					window.onmouseup = event => {
+						cursor_x = event.clientX;
+						cursor_y = event.clientY;
+						window.onmouseup = null;
+
+						handler_up();
+					}
+				}
+			}
+		);
+
+		element_screen.addEventListener(
+			'mousemove',
+			event => {
+				cursor_x = event.clientX;
+				cursor_y = event.clientY;
+				Tool.active?.screen_move();
+			}
+		);
+
+		tool_create.button_action();
+	}
+
 	element = null;
 	settings = [];
 
@@ -295,9 +328,9 @@ class Tool {
 	}
 
 	button_action () {
-		tool_active?.unselect();
+		Tool.active?.unselect();
 		this.element.className = 'active';
-		tool_active = this;
+		Tool.active = this;
 
 		for (const setting of this.settings) {
 			element_toolsettings.appendChild(setting);
@@ -305,7 +338,6 @@ class Tool {
 	}
 
 	screen_down () {}
-	screen_up () {}
 	screen_move () {}
 }
 
@@ -468,51 +500,5 @@ new (
 	}
 );
 
-tool_create.button_action();
-
-
-// LISTENERS
-
-element_screen.addEventListener(
-	'mousedown',
-	event => {
-		cursor_x = event.clientX;
-		cursor_y = event.clientY;
-
-		const handler_up = tool_active?.screen_down();
-		if (handler_up) {
-			window.onmouseup = event => {
-				cursor_x = event.clientX;
-				cursor_y = event.clientY;
-				window.onmouseup = null;
-
-				handler_up();
-			}
-		}
-	}
-);
-
-element_screen.addEventListener(
-	'mousemove',
-	event => {
-		cursor_x = event.clientX;
-		cursor_y = event.clientY;
-		tool_active?.screen_move();
-	}
-);
-
-
-// LOOP
-
-let tick_last = 0;
-
-function tick (now) {
-	const delay = now - tick_last;
-	tick_last = now;
-
-	Particle.tick(delay);
-
-	requestAnimationFrame(tick);
-}
-
-tick(0);
+Particle.init();
+Tool.init();
