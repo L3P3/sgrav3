@@ -327,6 +327,10 @@ class Tool {
 		Tool.active = tool_null;
 	}
 
+	static spacer() {
+		Application.getInstance().element_tools.lastChild.style.marginRight = '10px';
+	}
+
 	element = null;
 	settings = [];
 
@@ -396,14 +400,25 @@ const tool_create = new (
 			super('Erstellen');
 
 			const element_color = document.createElement('input');
+			element_color.title = 'Farbe';
 			element_color.type = 'color';
 			element_color.value = '#ff0000';
 			this.settings.push(element_color);
 
 			const element_size = document.createElement('input');
+			element_size.title = 'Größe';
 			element_size.type = 'range';
 			element_size.value = '50';
 			this.settings.push(element_size);
+
+			const element_charge = document.createElement('input');
+			element_charge.title = 'Ladung';
+			element_charge.type = 'range';
+			element_charge.value = '0';
+			element_charge.min = '-5';
+			element_charge.max = '5';
+			element_charge.step = '1';
+			this.settings.push(element_charge);
 		}
 
 		screen_down () {
@@ -415,6 +430,7 @@ const tool_create = new (
 			particle.phantom = true;
 			particle.color = this.settings[0].value;
 			particle.radius = Number(this.settings[1].value);
+			particle.charge = Number(this.settings[2].value);
 
 			return () => {
 				particle.speed_x = (app.cursor_x - down_x) * 0.001;
@@ -438,6 +454,8 @@ new (
 		}
 	}
 );
+
+Tool.spacer();
 
 new (
 	class extends Tool {
@@ -537,6 +555,8 @@ new (
 	}
 );
 
+Tool.spacer();
+
 new (
 	class extends Tool {
 		constructor () {
@@ -556,7 +576,7 @@ new (
 		}
 
 		button_action () {
-			alert('Noch unfertig!');
+			window.open('https://github.com/L3P3/sgrav3');
 		}
 	}
 );

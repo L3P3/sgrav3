@@ -37,8 +37,25 @@ body {
 }
 #tools > button {
 	cursor: pointer;
+	border: 0;
+	background: #aaa;
+	color: black;
 }
-#tools > button.active {
+#tools > button:focus {
+	outline: 0;
+}
+#tools > button:hover {
+	color: green;
+}
+#tools > button.active, #tools > button:active {
 	background: green;
 	color: white;
+}
+#tools > button.active:hover {
+	color: black;
+}
+
+#tools > .spacer {
+	display: inline-block;
+	width: 50px;
 }
