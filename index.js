@@ -236,6 +236,7 @@ class Particle {
 				for (const particle of Particle.all) {
 					if (
 						particle === this ||
+						particle.phantom ||
 						this.distance_to(particle) > this.radius + particle.radius
 					) continue;
 
@@ -287,6 +288,7 @@ class Particle {
 		}
 
 		this.element.style.transform = `translate(${this.position_x-this.radius}px, ${this.position_y-this.radius}px)`;
+		this.element.style.opacity = this.phantom ? .5 : 1;
 	}
 }
 
@@ -453,6 +455,38 @@ new (
 			for (const particle of Particle.hovered_get()) {
 				particle.destroy();
 			}
+		}
+	}
+);
+
+new (
+	class extends Tool {
+		constructor () {
+			super('Verschieben');
+		}
+
+		screen_down () {
+			const particle = Particle.hovered_get()[0];
+			if (!particle) return;
+			const app = Application.getInstance();
+
+			particle.phantom = true;
+			particle.speed_x = particle.speed_y = 0;
+			const offset_x = particle.position_x - app.cursor_x;
+			const offset_y = particle.position_y - app.cursor_y;
+
+			this.screen_move = () => {
+				particle.position_x = app.cursor_x + offset_x;
+				particle.position_y = app.cursor_y + offset_y;
+			}
+
+			return (
+				() => {
+					this.screen_move();
+					delete this.screen_move;
+					particle.phantom = false;
+				}
+			);
 		}
 	}
 );
